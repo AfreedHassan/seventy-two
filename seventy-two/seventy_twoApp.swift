@@ -7,26 +7,50 @@
 
 import SwiftUI
 import SwiftData
+import FirebaseCore
+import FirebaseAuth
+
+class AppDelegate: NSObject, UIApplicationDelegate {
+    
+    func application(_ application: UIApplication,
+                     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
+        FirebaseApp.configure()
+        return true
+    }
+}
+
+struct RootView: View {
+    @EnvironmentObject var userSession: UserSession
+
+    var body: some View {
+        Group {
+            if userSession.isCheckingAuth {
+                ProgressView("Checking authentication…")
+                    .progressViewStyle(CircularProgressViewStyle())
+            } else if userSession.isSignedIn {
+                ContentView()
+            } else {
+                SignInView()
+            }
+        }
+    }
+}
 
 @main
 struct seventy_twoApp: App {
-    var sharedModelContainer: ModelContainer = {
-        let schema = Schema([
-            Song.self,
-        ])
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
-
-        do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
-        } catch {
-            fatalError("Could not create ModelContainer: \(error)")
-        }
-    }()
+    // App delegate for Firebase setup
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
+    @StateObject private var userSession = UserSession()
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            RootView()
+                .environmentObject(userSession)
         }
-        .modelContainer(sharedModelContainer)
     }
+}
+
+#Preview {
+RootView()
+.environmentObject(UserSession())
 }
